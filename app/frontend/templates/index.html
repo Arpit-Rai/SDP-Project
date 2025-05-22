@@ -1,0 +1,66 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Transcriber + Social Post Generator</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <div class="navbar">
+    <div class="navbar-logo">Social Media Post Generator</div>
+    <div class="navbar-menu">
+      <div class="theme-toggle nav-item" id="themeToggle">
+        <span class="theme-icon">🌞</span>
+        <span class="theme-text">Theme</span>
+      </div>
+      <div class="logout-btn nav-item">
+        <span>Logout</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="tabs">
+      <button class="tab active" data-tab="transcriber">Transcriber</button>
+      <button class="tab" data-tab="history">History</button>
+    </div>
+
+    <div id="transcriber" class="tab-content active">
+      <div class="card">
+        <form id="processForm">
+          <input type="text" id="urlInput" placeholder="Enter YouTube URL" required />
+          <button type="submit">Submit</button>
+        </form>
+      </div>
+
+      <div class="section" id="output" style="display: none;">
+        <div class="card">
+          <h3>Transcript:</h3>
+          <pre id="transcript"></pre>
+        </div>
+
+        <div class="card">
+          <h3>Summary:</h3>
+          <pre id="summary"></pre>
+        </div>
+
+        <div class="card">
+          <h3>Social Media Posts:</h3>
+          <div id="socialPosts" class="social-posts"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="history" class="tab-content">
+      <div class="card">
+        <h3>Past Transcriptions</h3>
+        <div id="historyList"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/ui.js"></script>
+</body>
+</html>

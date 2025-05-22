@@ -1,0 +1,13 @@
+fastapi
+uvicorn[standard]
+yt_dlp
+moviepy==1.0.3
+imageio-ffmpeg
+openai-whisper
+transformers
+torch
+python-dotenv
+psycopg2-binary
+sqlalchemy
+redis
+requests

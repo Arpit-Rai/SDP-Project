@@ -1,0 +1,55 @@
+# === Python ===
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+
+# === Virtualenv ===
+.venv/
+env/
+venv/
+
+# === Environment Variables ===
+.env
+.env.*
+
+# === Airflow Files ===
+airflow.cfg
+airflow.db
+logs/
+dags/__pycache__/
+
+# === Ollama Cache (if used locally) ===
+.ollama/
+
+# === Docker ===
+*.log
+*.pid
+*.db
+docker-compose.override.yml
+
+# === Downloaded Media ===
+downloads/
+*.wav
+*.mp4
+
+# === FastAPI static artifacts ===
+app/frontend/static/generated/
+
+# === OS / Editor-specific ===
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+
+# === Jupyter (if used for tests) ===
+.ipynb_checkpoints/
+
+# === Git ===
+*.orig
