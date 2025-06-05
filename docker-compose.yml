@@ -24,12 +24,14 @@ services:
       - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
       - AIRFLOW__CORE__FERNET_KEY=${FERNET_KEY}
       - AIRFLOW__CORE__LOAD_EXAMPLES=False
+      - PYTHONPATH=/opt/airflow:/opt/airflow/dags
     volumes:
-      - airflow_dags:/opt/airflow/dags
-      - airflow_logs:/opt/airflow/logs
-      - airflow_plugins:/opt/airflow/plugins
+      - ./app/dags:/opt/airflow/dags
+      - ./app:/opt/airflow/app
+      - ./logs:/opt/airflow/logs
+      - ./plugins:/opt/airflow/plugins
     command: >
-      bash -c "airflow db init && airflow users create -u admin -p admin -f admin -l admin -r Admin -e admin@example.com"
+      bash -c "airflow db init && airflow users create -u admin -p admin -f admin -l admin -r Admin -e 'admin@example.com'"
     networks:
       - app-network
 
@@ -47,10 +49,12 @@ services:
       - AIRFLOW__WEBSERVER__EXPOSE_CONFIG=True
       - AIRFLOW__CORE__LOAD_EXAMPLES=False
       - AIRFLOW__CORE__FERNET_KEY=${FERNET_KEY}
+      - PYTHONPATH=/opt/airflow:/opt/airflow/dags
     volumes:
-      - airflow_dags:/opt/airflow/dags
-      - airflow_logs:/opt/airflow/logs
-      - airflow_plugins:/opt/airflow/plugins
+      - ./app/dags:/opt/airflow/dags
+      - ./app:/opt/airflow/app
+      - ./logs:/opt/airflow/logs
+      - ./plugins:/opt/airflow/plugins
     command: webserver
     networks:
       - app-network
@@ -68,10 +72,12 @@ services:
       - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
       - AIRFLOW__CORE__LOAD_EXAMPLES=False
       - AIRFLOW__CORE__FERNET_KEY=${FERNET_KEY}
+      - PYTHONPATH=/opt/airflow:/opt/airflow/dags
     volumes:
-      - airflow_dags:/opt/airflow/dags
-      - airflow_logs:/opt/airflow/logs
-      - airflow_plugins:/opt/airflow/plugins
+      - ./app/dags:/opt/airflow/dags
+      - ./app:/opt/airflow/app
+      - ./logs:/opt/airflow/logs
+      - ./plugins:/opt/airflow/plugins
     command: scheduler
     networks:
       - app-network
@@ -86,8 +92,10 @@ services:
     volumes:
       - .:/app
     depends_on:
-      - postgres
-      - ollama
+      postgres:
+        condition: service_started
+      ollama:
+        condition: service_healthy
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - YT_DLP_TEST_URL=${YT_DLP_TEST_URL}
@@ -103,28 +111,31 @@ services:
       - ollama_data:/root/.ollama
     networks:
       - app-network
-    # Add healthcheck to ensure Ollama is ready
+    entrypoint: ["/bin/sh", "-c"]
+    command: >
+      "ollama serve > /dev/null 2>&1 & sleep 10 && ollama pull phi:latest && tail -f /dev/null"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      test: ["CMD", "ollama", "list"]
       interval: 10s
       timeout: 5s
       retries: 10
-      start_period: 30s
-    # Optional: Pre-pull the mistral model on startup
-    # Uncomment the following lines if you want to automatically pull the model
-    # command: >
-    #   bash -c "ollama serve & 
-    #   sleep 10 && 
-    #   ollama pull mistral && 
-    #   wait"
+      start_period: 60s
+
+  
+  react_app:
+    build:
+      context: ./app/api/react_app
+    ports:
+      - "3000:80"
+    depends_on:
+      - fastapi_app
+    networks:
+      - app-network
 
 networks:
   app-network:
     driver: bridge
 
 volumes:
-  airflow_dags:
-  airflow_logs:
-  airflow_plugins:
   postgres_data:
   ollama_data:

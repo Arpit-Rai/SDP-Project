@@ -1,212 +1,244 @@
 import requests
 import re
+from typing import Dict, Optional
 import time
+import json
 
-def generate_social_posts(summary: str) -> dict[str, str]:
-    posts = {
-        "twitter": "Could not generate post.",
-        "instagram": "Could not generate caption.",
-        "shorts_title": "Could not generate title."
-    }
+OLLAMA_URL = "http://ollama:11434"
+OLLAMA_MODEL = "phi:latest"
+MAX_RETRIES = 3
 
-    prompt = f"""
-You are a creative social media content specialist.
 
-Based on this summary:
-\"\"\"{summary}\"\"\"
-
-Generate the following social media content:
-
-Twitter: A short tweet (max 280 characters)
-Instagram: A caption with at least 4 emojis
-Shorts Title: A catchy 5-8 word YouTube Shorts title
-
-⚠️ Format your response exactly as:
-Twitter: ...
-Instagram: ...
-Shorts Title: ...
-"""
-
-    # First, check if Ollama is available
+def check_ollama_connection():
+    """Check if Ollama is accessible and has the required model"""
     try:
-        health_response = requests.get("http://ollama:11434/api/tags", timeout=5)
-        if health_response.status_code != 200:
-            print("❌ Ollama service not available")
-            return posts
-    except Exception as e:
-        print(f"❌ Cannot connect to Ollama: {e}")
-        return posts
-
-    # Try to generate content with retries
-    max_retries = 3
-    for attempt in range(max_retries):
-        try:
-            print(f"🔄 Attempt {attempt + 1}/{max_retries} to generate posts...")
-            
-            # Use the correct payload format for Ollama chat API
-            response = requests.post(
-                "http://ollama:11434/api/chat",
-                json={
-                    "model": "mistral",
-                    "messages": [
-                        {
-                            "role": "user",
-                            "content": prompt
-                        }
-                    ],
-                    "stream": False
-                },
-                timeout=60  # Increase timeout for model generation
-            )
-
-            if response.status_code == 404:
-                print("📝 Chat API not available, trying generate API...")
-                # Fallback to generate API
-                response = requests.post(
-                    "http://ollama:11434/api/generate",
-                    json={
-                        "model": "mistral",
-                        "prompt": prompt,
-                        "stream": False
-                    },
-                    timeout=60
-                )
-
-            response.raise_for_status()
-            
-            # Extract the generated content
-            if response.status_code == 200:
-                result = response.json()
-                
-                # Handle different response formats
-                if "message" in result:
-                    # Chat API response format
-                    output = result["message"].get("content", "")
-                elif "response" in result:
-                    # Generate API response format
-                    output = result.get("response", "")
-                else:
-                    print("❌ Unexpected response format from Ollama")
-                    continue
-
-                print(f"\n📝 Ollama raw output:\n{output}")
-
-                # Parse the response to extract individual posts
-                parsed_posts = parse_ollama_response(output)
-                
-                # Update posts dict with parsed content
-                for key, value in parsed_posts.items():
-                    if value and value.strip():  # Only update if we got actual content
-                        posts[key] = value.strip()
-                
-                print(f"✅ Successfully generated posts on attempt {attempt + 1}")
-                return posts
-            
-        except requests.exceptions.Timeout:
-            print(f"⏱️ Timeout on attempt {attempt + 1}")
-            if attempt < max_retries - 1:
-                time.sleep(2)  # Wait before retry
-                continue
-        except requests.exceptions.RequestException as e:
-            print(f"❌ Request error on attempt {attempt + 1}: {e}")
-            if attempt < max_retries - 1:
-                time.sleep(2)
-                continue
-        except Exception as e:
-            print(f"❌ Unexpected error on attempt {attempt + 1}: {e}")
-            if attempt < max_retries - 1:
-                time.sleep(2)
-                continue
-
-    print("❌ Failed to generate posts after all attempts")
-    return posts
-
-
-def parse_ollama_response(output: str) -> dict[str, str]:
-    """
-    Parse the Ollama response to extract Twitter, Instagram, and Shorts Title content
-    """
-    parsed = {}
-    
-    # Clean up the output
-    output = output.strip()
-    
-    # Try to extract Twitter post
-    twitter_match = re.search(r'Twitter:\s*(.+?)(?=\n(?:Instagram|Shorts Title)|\Z)', output, re.DOTALL | re.IGNORECASE)
-    if twitter_match:
-        parsed["twitter"] = twitter_match.group(1).strip()
-    
-    # Try to extract Instagram caption
-    instagram_match = re.search(r'Instagram:\s*(.+?)(?=\n(?:Twitter|Shorts Title)|\Z)', output, re.DOTALL | re.IGNORECASE)
-    if instagram_match:
-        parsed["instagram"] = instagram_match.group(1).strip()
-    
-    # Try to extract Shorts Title
-    shorts_match = re.search(r'Shorts Title:\s*(.+?)(?=\n(?:Twitter|Instagram)|\Z)', output, re.DOTALL | re.IGNORECASE)
-    if shorts_match:
-        parsed["shorts_title"] = shorts_match.group(1).strip()
-    
-    return parsed
-
-
-def ensure_mistral_model_available():
-    """
-    Ensure the Mistral model is available in Ollama
-    """
-    try:
-        # Check if model is available
-        response = requests.get("http://ollama:11434/api/tags", timeout=10)
-        if response.status_code == 200:
-            models = response.json().get("models", [])
-            model_names = [model.get("name", "") for model in models]
-            
-            if "mistral:latest" in model_names or "mistral" in model_names:
-                print("✅ Mistral model is available")
-                return True
-            else:
-                print("📥 Mistral model not found, attempting to pull...")
-                # Try to pull the model
-                pull_response = requests.post(
-                    "http://ollama:11434/api/pull",
-                    json={"name": "mistral"},
-                    timeout=300  # 5 minutes timeout for model pulling
-                )
-                if pull_response.status_code == 200:
-                    print("✅ Successfully pulled Mistral model")
-                    return True
-                else:
-                    print(f"❌ Failed to pull Mistral model: {pull_response.status_code}")
-                    return False
-        else:
-            print(f"❌ Failed to check available models: {response.status_code}")
+        # Test basic connectivity
+        response = requests.get(f"{OLLAMA_URL}/api/tags", timeout=10)
+        response.raise_for_status()
+        
+        models = response.json().get("models", [])
+        model_names = [model.get("name", "") for model in models]
+        
+        print(f"🔍 Available models: {model_names}")
+        
+        if not any(OLLAMA_MODEL in name for name in model_names):
+            print(f"❌ Model '{OLLAMA_MODEL}' not found in available models")
             return False
+            
+        print(f"✅ Ollama connection successful, {OLLAMA_MODEL} model available")
+        return True
+        
     except Exception as e:
-        print(f"❌ Error checking/pulling Mistral model: {e}")
+        print(f"❌ Ollama connection failed: {e}")
         return False
 
 
-# Optional: Function to test the generator
-def test_generator():
-    """
-    Test function to verify the generator works
-    """
-    test_summary = "This is a test video about artificial intelligence and machine learning concepts."
-    
-    print("🧪 Testing social media post generation...")
-    
-    # First ensure model is available
-    if not ensure_mistral_model_available():
-        print("❌ Cannot proceed - Mistral model not available")
-        return
-    
-    # Generate posts
-    posts = generate_social_posts(test_summary)
-    
-    print("\n📱 Generated Posts:")
-    print(f"Twitter: {posts['twitter']}")
-    print(f"Instagram: {posts['instagram']}")
-    print(f"Shorts Title: {posts['shorts_title']}")
+def test_ollama_generate():
+    """Test a simple generation to verify Ollama is working"""
+    try:
+        test_prompt = "Say hello in one word."
+        response = requests.post(
+            f"{OLLAMA_URL}/api/generate",
+            json={
+                "model": OLLAMA_MODEL,
+                "prompt": test_prompt,
+                "stream": False
+            },
+            timeout=120
+        )
+        print("Payload sent:", {
+            "model": OLLAMA_MODEL,
+            "prompt": test_prompt,
+            "stream": False
+        })
+        print("Response text:", response.text)
+        response.raise_for_status()
+        
+        result = response.json()
+        print(f"🧪 Test generation response: {result}")
+        
+        if "response" in result and result["response"].strip():
+            print("✅ Ollama generation test successful")
+            return True
+        else:
+            print("❌ Ollama generation test failed - empty response")
+            return False
+            
+    except Exception as e:
+        print(f"❌ Ollama generation test failed: {e}")
+        return False
 
 
-if __name__ == "__main__":
-    test_generator()
+def generate_social_posts(summary: str) -> Dict[str, str]:
+    """
+    Generate social media posts using Ollama and Mistral based on a summary.
+    Returns a dictionary with 'twitter', 'instagram', and 'shorts_title' keys.
+    """
+    
+    # First, check if Ollama is accessible
+    if not check_ollama_connection():
+        print("❌ Ollama not accessible, returning fallback")
+        return get_fallback_posts()
+    
+    # Test basic generation
+    if not test_ollama_generate():
+        print("❌ Ollama generation test failed, returning fallback")
+        return get_fallback_posts()
+    
+    prompt = f"""You are a creative social media assistant. Based on this summary, create engaging social media content:
+
+Summary: {summary}
+
+Please respond EXACTLY in this format:
+
+Twitter: [Write a catchy tweet under 280 characters]
+
+Instagram: [Write an engaging caption with 4-5 emojis and end with 3-5 hashtags]
+
+Shorts Title: [Write a compelling title in 8 words or less]
+
+Remember to follow the exact format above."""
+
+    for attempt in range(1, MAX_RETRIES + 1):
+        print(f"🔄 Attempt {attempt}/{MAX_RETRIES} to generate posts...")
+
+        try:
+            # Use the generate API
+            payload = {
+                "model": OLLAMA_MODEL,
+                "prompt": prompt,
+                "stream": False,
+                "options": {
+                    "temperature": 0.7,
+                    "top_p": 0.9,
+                    "max_tokens": 500
+                }
+            }
+            
+            print(f"📤 Sending request to: {OLLAMA_URL}/api/generate")
+            print(f"📤 Payload: {json.dumps(payload, indent=2)}")
+            
+            response = requests.post(
+                f"{OLLAMA_URL}/api/generate",
+                json=payload,
+                timeout=120,  # Increased timeout
+            )
+            
+            print(f"📥 Response status: {response.status_code}")
+            print(f"📥 Response headers: {dict(response.headers)}")
+            
+            response.raise_for_status()
+            response_data = response.json()
+            
+            print(f"📥 Full response: {json.dumps(response_data, indent=2)}")
+            
+            raw_output = response_data.get("response", "")
+            
+            if not raw_output or raw_output.strip() == "":
+                print(f"⚠️ Empty response on attempt {attempt}")
+                continue
+
+            print("📝 Ollama raw output:\n", raw_output)
+            parsed = parse_ollama_response(raw_output)
+            
+            print(f"📋 Parsed response: {json.dumps(parsed, indent=2)}")
+
+            # Validate parsed content
+            valid_content = True
+            for key in ["twitter", "instagram", "shorts_title"]:
+                if not parsed.get(key) or parsed[key].strip() == "":
+                    print(f"⚠️ Missing or empty content for: {key}")
+                    parsed[key] = get_fallback_content(key)
+                    valid_content = False
+
+            if valid_content:
+                print("✅ Successfully generated all social media posts")
+                return parsed
+            else:
+                print("⚠️ Some content was missing, using fallbacks for those fields")
+                return parsed
+
+        except requests.Timeout as e:
+            print(f"⏰ Timeout on attempt {attempt}: {e}")
+            time.sleep(5)
+        except requests.RequestException as e:
+            print(f"❌ Request error on attempt {attempt}: {e}")
+            if hasattr(e.response, 'text'):
+                print(f"Error response: {e.response.text}")
+            time.sleep(2)
+        except json.JSONDecodeError as e:
+            print(f"❌ JSON decode error on attempt {attempt}: {e}")
+            time.sleep(2)
+        except Exception as e:
+            print(f"❌ Unexpected error on attempt {attempt}: {e}")
+            time.sleep(2)
+
+    print("❌ Failed to generate posts after all attempts")
+    return get_fallback_posts()
+
+
+def parse_ollama_response(text: str) -> Dict[str, str]:
+    """
+    Parse the structured response from Ollama and extract platform-specific content.
+    """
+    posts = {"twitter": "", "instagram": "", "shorts_title": ""}
+    key_map = {
+        "twitter": "twitter",
+        "instagram": "instagram", 
+        "shorts title": "shorts_title",
+        "shorts_title": "shorts_title",  # Handle both formats
+    }
+
+    # Split into lines and process
+    lines = text.strip().split('\n')
+    current_key = None
+    current_content = []
+
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+
+        # Check if this line starts a new section
+        found_key = None
+        for label, internal_key in key_map.items():
+            if line.lower().startswith(label.lower() + ":"):
+                found_key = internal_key
+                # Save previous content if any
+                if current_key and current_content:
+                    posts[current_key] = ' '.join(current_content).strip()
+                
+                # Start new section
+                current_key = found_key
+                # Extract content after the colon
+                content_after_colon = line.split(":", 1)[1].strip() if ":" in line else ""
+                current_content = [content_after_colon] if content_after_colon else []
+                break
+        
+        if not found_key and current_key:
+            # This line belongs to the current section
+            current_content.append(line)
+
+    # Don't forget the last section
+    if current_key and current_content:
+        posts[current_key] = ' '.join(current_content).strip()
+
+    return posts
+
+
+def get_fallback_posts() -> Dict[str, str]:
+    """Fallback values if nothing is generated"""
+    return {
+        "twitter": "Could not generate Twitter post. Please try again.",
+        "instagram": "Could not generate Instagram caption. Try again later.",
+        "shorts_title": "Could not generate a Shorts title.",
+    }
+
+
+def get_fallback_content(key: str) -> str:
+    defaults = {
+        "twitter": "Check out this amazing content! 🎬✨",
+        "instagram": "Experience something amazing today! 🌟🎥 #inspo #trending #shorts",
+        "shorts_title": "Watch This Before It Goes Viral!",
+    }
+    return defaults.get(key, f"Could not generate content for {key}.")

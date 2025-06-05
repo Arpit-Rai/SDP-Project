@@ -4,11 +4,19 @@ from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import router
 
 
 app = FastAPI(title="YouTube Transcriber")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Mount static directory for CSS/JS/assets (if added in future)
 app.mount("/static", StaticFiles(directory="app/frontend/static"), name="static")

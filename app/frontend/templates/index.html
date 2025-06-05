@@ -1,66 +1,1355 @@
-<!-- index.html -->
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Transcriber + Social Post Generator</title>
-  <link rel="stylesheet" href="/static/styles.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TranscribeHub</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+        }
+
+        .sidebar {
+            width: 280px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 2rem 0;
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .logo {
+            padding: 0 2rem 2rem;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+
+        .logo h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #2d3748;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 2rem;
+            color: #4a5568;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+        }
+
+        .nav-item:hover {
+            background: rgba(66, 153, 225, 0.1);
+            color: #4299e1;
+            border-left-color: #4299e1;
+        }
+
+        .nav-item.active {
+            background: rgba(66, 153, 225, 0.15);
+            color: #4299e1;
+            border-left-color: #4299e1;
+            font-weight: 600;
+        }
+
+        .nav-icon {
+            width: 20px;
+            height: 20px;
+            margin-right: 1rem;
+            fill: currentColor;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+        }
+
+        .transcriber-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 3rem;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+            margin-top: 2rem;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .youtube-icon {
+            width: 40px;
+            height: 40px;
+            margin-bottom: 1rem;
+        }
+
+        .header h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 2rem;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 600;
+            color: #4a5568;
+            margin-bottom: 0.75rem;
+            font-size: 1rem;
+        }
+
+        .url-input {
+            width: 100%;
+            padding: 1rem 1.25rem;
+            border: 2px solid rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        .url-input:focus {
+            outline: none;
+            border-color: #4299e1;
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+            background: white;
+        }
+
+        .generate-btn {
+            width: 100%;
+            padding: 1rem 2rem;
+            background: linear-gradient(135deg, #4299e1, #3182ce);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .generate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(66, 153, 225, 0.4);
+        }
+
+        .generate-btn:active {
+            transform: translateY(0);
+        }
+
+        .decorative-circles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: -1;
+        }
+
+        .circle {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .circle:nth-child(1) {
+            width: 200px;
+            height: 200px;
+            top: 10%;
+            left: 80%;
+            animation-delay: 0s;
+        }
+
+        .circle:nth-child(2) {
+            width: 150px;
+            height: 150px;
+            top: 60%;
+            left: 85%;
+            animation-delay: 2s;
+        }
+
+        .circle:nth-child(3) {
+            width: 100px;
+            height: 100px;
+            top: 80%;
+            left: 75%;
+            animation-delay: 4s;
+        }
+
+        .circle:nth-child(4) {
+            width: 120px;
+            height: 120px;
+            top: 30%;
+            left: 70%;
+            animation-delay: 1s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+
+        /* Content Sections */
+        .content-section {
+            display: none;
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        .content-section.active {
+            display: block;
+        }
+
+        .section-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: white;
+            text-align: center;
+            margin-bottom: 3rem;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        /* My Transcripts Styles */
+        .transcripts-container {
+            width: 100%;
+        }
+
+        .transcripts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+        }
+
+        .transcript-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .transcript-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .transcript-thumbnail {
+            position: relative;
+            width: 100%;
+            height: 200px;
+        }
+
+        .transcript-thumbnail img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .duration {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .transcript-info {
+            padding: 1.5rem;
+        }
+
+        .transcript-info h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 0.5rem;
+        }
+
+        .transcript-date {
+            color: #718096;
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+        }
+
+        .transcript-preview {
+            color: #4a5568;
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .transcript-actions {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .action-btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .action-btn.view {
+            background: #4299e1;
+            color: white;
+        }
+
+        .action-btn.download {
+            background: #48bb78;
+            color: white;
+        }
+
+        .action-btn.share {
+            background: #ed8936;
+            color: white;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        /* About Section Styles */
+        .about-container {
+            width: 100%;
+        }
+
+        .about-hero {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 3rem;
+            margin-bottom: 3rem;
+            text-align: center;
+        }
+
+        .hero-image {
+            width: 100%;
+            max-width: 600px;
+            height: 300px;
+            object-fit: cover;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+        }
+
+        .hero-content h3 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 1rem;
+        }
+
+        .hero-content p {
+            font-size: 1.125rem;
+            color: #4a5568;
+            line-height: 1.7;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .feature-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .feature-image {
+            width: 100%;
+            height: 200px;
+        }
+
+        .feature-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .feature-content {
+            padding: 1.5rem;
+        }
+
+        .feature-content h4 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 1rem;
+        }
+
+        .feature-content p {
+            color: #4a5568;
+            line-height: 1.6;
+        }
+
+        .workflow-section {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 3rem;
+        }
+
+        .workflow-section h3 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2d3748;
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .workflow-steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+        }
+
+        .step {
+            text-align: center;
+        }
+
+        .step-number {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #4299e1, #3182ce);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 0 auto 1rem;
+        }
+
+        .step h4 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 0.5rem;
+        }
+
+        .step p {
+            color: #4a5568;
+        }
+
+        /* Help Section Styles */
+        .help-container {
+            width: 100%;
+        }
+
+        .help-content {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 3rem;
+        }
+
+        .contact-section {
+            margin-bottom: 3rem;
+        }
+
+        .contact-section h3 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 2rem;
+        }
+
+        .contact-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .contact-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            padding: 1.5rem;
+            background: rgba(66, 153, 225, 0.05);
+            border-radius: 12px;
+        }
+
+        .contact-icon {
+            font-size: 2rem;
+        }
+
+        .contact-item h4 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 0.5rem;
+        }
+
+        .contact-item p {
+            color: #4299e1;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .contact-item small {
+            color: #718096;
+        }
+
+        .faq-section h3 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 2rem;
+        }
+
+        .faq-item {
+            margin-bottom: 2rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .faq-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .faq-item h4 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 0.75rem;
+        }
+
+        .faq-item p {
+            color: #4a5568;
+            line-height: 1.6;
+        }
+
+        /* Results Modal Styles */
+        .results-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            max-width: 90vw;
+            max-height: 90vh;
+            width: 800px;
+            overflow: hidden;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #4299e1, #3182ce);
+            color: white;
+            padding: 1.5rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 2rem;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background 0.3s ease;
+        }
+
+        .close-modal:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .modal-body {
+            padding: 2rem;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+
+        .result-section {
+            margin-bottom: 2rem;
+        }
+
+        .result-section h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .result-content {
+            background: #f7fafc;
+            padding: 1rem;
+            border-radius: 8px;
+            border-left: 4px solid #4299e1;
+            line-height: 1.6;
+            color: #4a5568;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .transcript-content {
+            max-height: 150px;
+        }
+
+        .social-posts {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .social-post {
+            background: #f7fafc;
+            padding: 1rem;
+            border-radius: 8px;
+            border-left: 4px solid #48bb78;
+        }
+
+        .social-post h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 0.5rem;
+        }
+
+        .copy-btn {
+            background: #48bb78;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .copy-btn:hover {
+            background: #38a169;
+            transform: translateY(-1px);
+        }
+
+        .modal-footer {
+            background: #f7fafc;
+            padding: 1.5rem 2rem;
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+        }
+
+        .download-all-btn, .save-transcript-btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .download-all-btn {
+            background: #4299e1;
+            color: white;
+        }
+
+        .download-all-btn:hover {
+            background: #3182ce;
+            transform: translateY(-1px);
+        }
+
+        .save-transcript-btn {
+            background: #48bb78;
+            color: white;
+        }
+
+        .save-transcript-btn:hover {
+            background: #38a169;
+            transform: translateY(-1px);
+        }
+
+        /* Notification animations */
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* Loading state for form */
+        .generate-btn:disabled {
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .url-input:invalid {
+            border-color: #f56565;
+        }
+
+        .url-input:valid {
+            border-color: #48bb78;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                padding: 1rem 0;
+            }
+            
+            .main-content {
+                padding: 1rem;
+            }
+            
+            .transcriber-card {
+                padding: 2rem;
+                margin-top: 0;
+            }
+
+            .section-title {
+                font-size: 2rem;
+            }
+
+            .transcripts-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .workflow-steps {
+                grid-template-columns: 1fr;
+            }
+
+            .contact-info {
+                grid-template-columns: 1fr;
+            }
+
+            .modal-content {
+                width: 95vw;
+                max-height: 95vh;
+            }
+
+            .modal-body {
+                padding: 1rem;
+                max-height: 70vh;
+            }
+
+            .modal-footer {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .download-all-btn, .save-transcript-btn {
+                width: 100%;
+            }
+        }
+    </style>
 </head>
 <body>
-  <div class="navbar">
-    <div class="navbar-logo">Social Media Post Generator</div>
-    <div class="navbar-menu">
-      <div class="theme-toggle nav-item" id="themeToggle">
-        <span class="theme-icon">🌞</span>
-        <span class="theme-text">Theme</span>
-      </div>
-      <div class="logout-btn nav-item">
-        <span>Logout</span>
-      </div>
-    </div>
-  </div>
-
-  <div class="container">
-    <div class="tabs">
-      <button class="tab active" data-tab="transcriber">Transcriber</button>
-      <button class="tab" data-tab="history">History</button>
+    <div class="decorative-circles">
+        <div class="circle"></div>
+        <div class="circle"></div>
+        <div class="circle"></div>
+        <div class="circle"></div>
     </div>
 
-    <div id="transcriber" class="tab-content active">
-      <div class="card">
-        <form id="processForm">
-          <input type="text" id="urlInput" placeholder="Enter YouTube URL" required />
-          <button type="submit">Submit</button>
-        </form>
-      </div>
+    <aside class="sidebar">
+        <div class="logo">
+            <h1>TranscribeHub</h1>
+        </div>
+        
+        <nav>
+            <a href="#" class="nav-item active">
+                <svg class="nav-icon" viewBox="0 0 24 24">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                </svg>
+                New Transcript
+            </a>
+            
+            <a href="#" class="nav-item">
+                <svg class="nav-icon" viewBox="0 0 24 24">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14,2 14,8 20,8"/>
+                    <line x1="16" y1="13" x2="8" y2="13"/>
+                    <line x1="16" y1="17" x2="8" y2="17"/>
+                    <polyline points="10,9 9,9 8,9"/>
+                </svg>
+                My Transcripts
+            </a>
+            
+            <a href="#" class="nav-item">
+                <svg class="nav-icon" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1"/>
+                </svg>
+                History
+            </a>
+            
+            <a href="#" class="nav-item">
+                <svg class="nav-icon" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1 1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                </svg>
+                Settings
+            </a>
+            
+            <a href="#" class="nav-item">
+                <svg class="nav-icon" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                    <path d="M12 17h.01"/>
+                </svg>
+                About
+            </a>
+            
+            <a href="#" class="nav-item">
+                <svg class="nav-icon" viewBox="0 0 24 24">
+                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                    <path d="M12 17h.01"/>
+                </svg>
+                Help
+            </a>
+        </nav>
+    </aside>
 
-      <div class="section" id="output" style="display: none;">
-        <div class="card">
-          <h3>Transcript:</h3>
-          <pre id="transcript"></pre>
+    <main class="main-content">
+        <!-- New Transcript Section -->
+        <div id="new-transcript" class="content-section active">
+            <div class="transcriber-card">
+                <div class="header">
+                    <svg class="youtube-icon" viewBox="0 0 24 24" fill="#FF0000">
+                        <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                    </svg>
+                    <h2>YouTube Transcriber</h2>
+                </div>
+                
+                <form id="transcriptForm">
+                    <div class="form-group">
+                        <label for="videoUrl" class="form-label">YouTube Video URL</label>
+                        <input 
+                            type="url" 
+                            id="videoUrl" 
+                            class="url-input" 
+                            placeholder="https://www.youtube.com/watch?v=..."
+                            required
+                        >
+                    </div>
+                    
+                    <button type="submit" class="generate-btn">
+                        Generate Transcript
+                    </button>
+                </form>
+            </div>
         </div>
 
-        <div class="card">
-          <h3>Summary:</h3>
-          <pre id="summary"></pre>
+        <!-- My Transcripts Section -->
+        <div id="my-transcripts" class="content-section">
+            <div class="transcripts-container">
+                <h2 class="section-title">My Transcripts</h2>
+                
+                <div class="transcripts-grid">
+                    <div class="transcript-card">
+                        <div class="transcript-thumbnail">
+                            <img src="/api/placeholder/300/200" alt="Video thumbnail" />
+                            <div class="duration">12:45</div>
+                        </div>
+                        <div class="transcript-info">
+                            <h3>How to Build a Startup in 30 Days</h3>
+                            <p class="transcript-date">Created on March 15, 2025</p>
+                            <p class="transcript-preview">In this comprehensive guide, we'll explore the essential steps to building a successful startup from scratch. Starting with ideation and market research...</p>
+                            <div class="transcript-actions">
+                                <button class="action-btn view">View Full</button>
+                                <button class="action-btn download">Download</button>
+                                <button class="action-btn share">Share</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="transcript-card">
+                        <div class="transcript-thumbnail">
+                            <img src="/api/placeholder/300/200" alt="Video thumbnail" />
+                            <div class="duration">8:30</div>
+                        </div>
+                        <div class="transcript-info">
+                            <h3>Machine Learning Explained Simply</h3>
+                            <p class="transcript-date">Created on March 12, 2025</p>
+                            <p class="transcript-preview">Machine learning doesn't have to be complicated. This video breaks down complex concepts into simple, understandable terms that anyone can grasp...</p>
+                            <div class="transcript-actions">
+                                <button class="action-btn view">View Full</button>
+                                <button class="action-btn download">Download</button>
+                                <button class="action-btn share">Share</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="transcript-card">
+                        <div class="transcript-thumbnail">
+                            <img src="/api/placeholder/300/200" alt="Video thumbnail" />
+                            <div class="duration">15:22</div>
+                        </div>
+                        <div class="transcript-info">
+                            <h3>Social Media Marketing Tips 2025</h3>
+                            <p class="transcript-date">Created on March 10, 2025</p>
+                            <p class="transcript-preview">Discover the latest social media marketing strategies that are working in 2025. From content creation to audience engagement...</p>
+                            <div class="transcript-actions">
+                                <button class="action-btn view">View Full</button>
+                                <button class="action-btn download">Download</button>
+                                <button class="action-btn share">Share</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <div class="card">
-          <h3>Social Media Posts:</h3>
-          <div id="socialPosts" class="social-posts"></div>
+        <!-- About Section -->
+        <div id="about" class="content-section">
+            <div class="about-container">
+                <h2 class="section-title">About TranscribeHub</h2>
+                
+                <div class="about-hero">
+                    <img src="/api/placeholder/600/300" alt="TranscribeHub Overview" class="hero-image" />
+                    <div class="hero-content">
+                        <h3>Transform YouTube Videos into Powerful Content</h3>
+                        <p>TranscribeHub is your all-in-one solution for converting YouTube videos into multiple content formats. Our advanced AI technology streamlines your content creation workflow.</p>
+                    </div>
+                </div>
+
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-image">
+                            <img src="/api/placeholder/400/250" alt="Video Download" />
+                        </div>
+                        <div class="feature-content">
+                            <h4>🎥 Video Download</h4>
+                            <p>Simply paste any YouTube URL and our system automatically downloads the video for processing. Supports all video qualities and formats.</p>
+                        </div>
+                    </div>
+
+                    <div class="feature-card">
+                        <div class="feature-image">
+                            <img src="/api/placeholder/400/250" alt="AI Transcription" />
+                        </div>
+                        <div class="feature-content">
+                            <h4>🎙️ AI Transcription</h4>
+                            <p>Our state-of-the-art speech recognition technology converts audio to text with 95%+ accuracy. Supports multiple languages and accents.</p>
+                        </div>
+                    </div>
+
+                    <div class="feature-card">
+                        <div class="feature-image">
+                            <img src="/api/placeholder/400/250" alt="Smart Summarization" />
+                        </div>
+                        <div class="feature-content">
+                            <h4>📝 Smart Summarization</h4>
+                            <p>Automatically generates concise summaries highlighting key points, main topics, and important timestamps from your video content.</p>
+                        </div>
+                    </div>
+
+                    <div class="feature-card">
+                        <div class="feature-image">
+                            <img src="/api/placeholder/400/250" alt="Social Media Posts" />
+                        </div>
+                        <div class="feature-content">
+                            <h4>📱 Social Media Posts</h4>
+                            <p>Generate engaging social media posts optimized for different platforms - Twitter threads, LinkedIn posts, Instagram captions, and more.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="workflow-section">
+                    <h3>How It Works</h3>
+                    <div class="workflow-steps">
+                        <div class="step">
+                            <div class="step-number">1</div>
+                            <h4>Paste URL</h4>
+                            <p>Simply paste your YouTube video URL</p>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">2</div>
+                            <h4>AI Processing</h4>
+                            <p>Our AI downloads, transcribes, and analyzes</p>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">3</div>
+                            <h4>Get Results</h4>
+                            <p>Receive transcript, summary, and social posts</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-      </div>
-    </div>
 
-    <div id="history" class="tab-content">
-      <div class="card">
-        <h3>Past Transcriptions</h3>
-        <div id="historyList"></div>
-      </div>
-    </div>
-  </div>
+        <!-- Help Section -->
+        <div id="help" class="content-section">
+            <div class="help-container">
+                <h2 class="section-title">Help & Support</h2>
+                
+                <div class="help-content">
+                    <div class="contact-section">
+                        <h3>Get in Touch</h3>
+                        <div class="contact-info">
+                            <div class="contact-item">
+                                <div class="contact-icon">📞</div>
+                                <div>
+                                    <h4>Phone Support</h4>
+                                    <p>+1 (555) 123-4567</p>
+                                    <small>Available Monday-Friday, 9AM-5PM EST</small>
+                                </div>
+                            </div>
+                            <div class="contact-item">
+                                <div class="contact-icon">✉️</div>
+                                <div>
+                                    <h4>Email Support</h4>
+                                    <p>support@transcribehub.com</p>
+                                    <small>We respond within 24 hours</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-  <script src="/static/ui.js"></script>
+                    <div class="faq-section">
+                        <h3>Frequently Asked Questions</h3>
+                        <div class="faq-item">
+                            <h4>What video formats are supported?</h4>
+                            <p>We support all YouTube video formats and qualities. Our system automatically handles the conversion process.</p>
+                        </div>
+                        <div class="faq-item">
+                            <h4>How accurate is the transcription?</h4>
+                            <p>Our AI achieves 95%+ accuracy for clear audio. Accuracy may vary based on audio quality, accents, and background noise.</p>
+                        </div>
+                        <div class="faq-item">
+                            <h4>Can I edit the generated content?</h4>
+                            <p>Yes! All transcripts, summaries, and social media posts can be edited and customized to your needs.</p>
+                        </div>
+                        <div class="faq-item">
+                            <h4>Is there a limit on video length?</h4>
+                            <p>Free users can process videos up to 30 minutes. Premium users have no length restrictions.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // API Configuration
+        const API_BASE_URL = 'http://localhost:8000'; // Adjust this to your FastAPI server URL
+
+        // Global variable to store the latest result
+        let latestResult = null;
+
+        // Navigation functionality
+        const navItems = document.querySelectorAll('.nav-item');
+        const contentSections = document.querySelectorAll('.content-section');
+
+        navItems.forEach((item, index) => {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                // Remove active class from all items and sections
+                navItems.forEach(nav => nav.classList.remove('active'));
+                contentSections.forEach(section => section.classList.remove('active'));
+                
+                // Add active class to clicked item and corresponding section
+                this.classList.add('active');
+                contentSections[index].classList.add('active');
+            });
+        });
+
+        // Form submission with FastAPI integration
+        document.getElementById('transcriptForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const urlInput = document.getElementById('videoUrl');
+            const button = document.querySelector('.generate-btn');
+            const originalText = button.textContent;
+            const url = urlInput.value.trim();
+
+            // Validate URL
+            if (!url || !isValidYouTubeUrl(url)) {
+                showNotification('Please enter a valid YouTube URL', 'error');
+                return;
+            }
+            
+            // Update button state
+            button.textContent = 'Processing Video...';
+            button.style.opacity = '0.7';
+            button.disabled = true;
+
+            try {
+                // Call FastAPI endpoint
+                const response = await fetch(`${API_BASE_URL}/process`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ url: url })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                latestResult = result;
+
+                // Show success notification
+                showNotification('Video processed successfully! 🎉', 'success');
+                
+                // Display results
+                displayResults(result);
+
+                // Clear the input
+                urlInput.value = '';
+
+            } catch (error) {
+                console.error('Error processing video:', error);
+                showNotification(`Error: ${error.message}`, 'error');
+            } finally {
+                // Reset button state
+                button.textContent = originalText;
+                button.style.opacity = '1';
+                button.disabled = false;
+            }
+        });
+
+        // YouTube URL validation
+        function isValidYouTubeUrl(url) {
+            const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com\/(watch\?v=|embed\/|v\/)|youtu\.be\/)/;
+            return youtubeRegex.test(url);
+        }
+
+        // Show notification
+        function showNotification(message, type = 'info') {
+            // Remove existing notifications
+            const existingNotifications = document.querySelectorAll('.notification');
+            existingNotifications.forEach(notif => notif.remove());
+
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            
+            const style = {
+                position: 'fixed',
+                top: '20px',
+                right: '20px',
+                padding: '1rem 1.5rem',
+                borderRadius: '8px',
+                color: 'white',
+                fontWeight: '600',
+                zIndex: '10000',
+                animation: 'slideIn 0.3s ease',
+                maxWidth: '400px',
+                wordWrap: 'break-word'
+            };
+
+            if (type === 'success') {
+                style.background = 'linear-gradient(135deg, #48bb78, #38a169)';
+            } else if (type === 'error') {
+                style.background = 'linear-gradient(135deg, #f56565, #e53e3e)';
+            } else {
+                style.background = 'linear-gradient(135deg, #4299e1, #3182ce)';
+            }
+
+            Object.assign(notification.style, style);
+            document.body.appendChild(notification);
+
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 5000);
+        }
+
+        // Display results in a modal or new section
+        function displayResults(result) {
+            // Create results modal
+            const modal = document.createElement('div');
+            modal.className = 'results-modal';
+            modal.innerHTML = `
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>Processing Complete! 🎉</h2>
+                        <button class="close-modal">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="result-section">
+                            <h3>📝 Transcript</h3>
+                            <div class="result-content transcript-content">
+                                ${result.transcript.replace(/\n/g, '<br>')}
+                            </div>
+                        </div>
+                        <div class="result-section">
+                            <h3>📋 Summary</h3>
+                            <div class="result-content">
+                                ${result.summary.replace(/\n/g, '<br>')}
+                            </div>
+                        </div>
+                        <div class="result-section">
+                            <h3>📱 Social Media Posts</h3>
+                            <div class="social-posts">
+                                ${Object.entries(result.social_posts).map(([platform, post]) => `
+                                    <div class="social-post">
+                                        <h4>${platform.charAt(0).toUpperCase() + platform.slice(1)}</h4>
+                                        <div class="result-content">${post.replace(/\n/g, '<br>')}</div>
+                                        <button class="copy-btn" data-content="${post.replace(/"/g, '&quot;')}">Copy</button>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="download-all-btn">Download All</button>
+                        <button class="save-transcript-btn">Save to My Transcripts</button>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(modal);
+
+            // Add event listeners
+            modal.querySelector('.close-modal').addEventListener('click', () => modal.remove());
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) modal.remove();
+            });
+
+            // Copy functionality
+            modal.querySelectorAll('.copy-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    navigator.clipboard.writeText(btn.dataset.content).then(() => {
+                        btn.textContent = 'Copied!';
+                        setTimeout(() => btn.textContent = 'Copy', 2000);
+                    });
+                });
+            });
+
+            // Download functionality
+            modal.querySelector('.download-all-btn').addEventListener('click', () => {
+                downloadResults(result);
+            });
+
+            // Save to transcripts functionality
+            modal.querySelector('.save-transcript-btn').addEventListener('click', () => {
+                saveToTranscripts(result);
+                modal.remove();
+            });
+        }
+
+        // Download results as text file
+        function downloadResults(result) {
+            const content = `
+TRANSCRIPT:
+${result.transcript}
+
+SUMMARY:
+${result.summary}
+
+SOCIAL MEDIA POSTS:
+${Object.entries(result.social_posts).map(([platform, post]) => `
+${platform.toUpperCase()}:
+${post}
+`).join('\n')}
+            `.trim();
+
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `transcript_${new Date().toISOString().split('T')[0]}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            showNotification('Results downloaded successfully!', 'success');
+        }
+
+        // Save to transcripts (simulate)
+        function saveToTranscripts(result) {
+            // In a real app, this would save to a database
+            showNotification('Transcript saved to My Transcripts!', 'success');
+        }
+
+        // Action buttons functionality
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('action-btn')) {
+                const action = e.target.textContent;
+                showNotification(`${action} functionality would be implemented here!`, 'info');
+            }
+        });
+    </script>
 </body>
 </html>

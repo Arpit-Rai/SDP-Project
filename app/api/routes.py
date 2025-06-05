@@ -6,6 +6,7 @@ from app.services.summarizer import summarize_text
 from app.services.generator import generate_social_posts
 from app.models.schemas import ProcessRequest, ProcessResponse
 import traceback
+from fastapi.middleware.cors import CORSMiddleware
 
 router = APIRouter()
 
