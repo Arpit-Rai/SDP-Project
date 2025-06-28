@@ -6,7 +6,7 @@ from airflow import DAG
 from airflow.operators.python import PythonOperator
 from datetime import datetime, timedelta
 
-# Add the project root to Python path so we can import from app/
+# Adding the project root to Python path so we can import from app/
 # This is necessary because Airflow runs from /opt/airflow/ inside the container
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
@@ -80,7 +80,7 @@ def summarize_transcript(ti, **kwargs):
     try:
         from app.services.summarizer import summarize_text
         
-        # Get transcript from previous task
+        # Getting transcript from previous task
         transcript = ti.xcom_pull(key='transcript', task_ids='transcribe_audio')
         if not transcript:
             raise ValueError("No transcript received from transcribe task")
@@ -89,7 +89,7 @@ def summarize_transcript(ti, **kwargs):
         summary = summarize_text(transcript)
         print(f"Summary generated. Length: {len(summary)} characters")
         
-        # Push summary to XCom for next task
+        # Pushing summary to XCom for next task
         ti.xcom_push(key='summary', value=summary)
         return summary
         
@@ -102,7 +102,7 @@ def generate_social_posts(ti, **kwargs):
     try:
         from app.services.generator import generate_social_posts
         
-        # Get summary from previous task
+        # Getting summary from the previous task
         summary = ti.xcom_pull(key='summary', task_ids='summarize_transcript')
         if not summary:
             raise ValueError("No summary received from summarize task")
@@ -114,7 +114,7 @@ def generate_social_posts(ti, **kwargs):
         print(posts)
         print("=" * 50)
         
-        # Optionally push posts to XCom for potential downstream tasks
+        # Optionally we can push posts to XCom for potential downstream tasks
         ti.xcom_push(key='social_posts', value=posts)
         return posts
         
@@ -122,7 +122,7 @@ def generate_social_posts(ti, **kwargs):
         print(f"Error generating social posts: {str(e)}")
         raise
 
-# Define tasks
+# Defining tasks
 download_task = PythonOperator(
     task_id='download_audio',
     python_callable=download_audio,
@@ -163,5 +163,5 @@ generate_posts_task = PythonOperator(
     """
 )
 
-# Define task dependencies
+# Defining task dependencies
 download_task >> transcribe_task >> summarize_task >> generate_posts_task

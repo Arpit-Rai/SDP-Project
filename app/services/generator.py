@@ -4,6 +4,7 @@ from typing import Dict, Optional
 import time
 import json
 
+# change it to ollama when using docker else use localhost
 OLLAMA_URL = "http://ollama:11434"
 OLLAMA_MODEL = "phi:latest"
 MAX_RETRIES = 3
@@ -34,7 +35,7 @@ def check_ollama_connection():
 
 
 def test_ollama_generate():
-    """Test a simple generation to verify Ollama is working"""
+    """Testing a simple generation to verify if Ollama is working"""
     try:
         test_prompt = "Say hello in one word."
         response = requests.post(
@@ -71,7 +72,7 @@ def test_ollama_generate():
 
 def generate_social_posts(summary: str) -> Dict[str, str]:
     """
-    Generate social media posts using Ollama and Mistral based on a summary.
+    Generates social media posts using Ollama and Mistral based on a summary.
     Returns a dictionary with 'twitter', 'instagram', and 'shorts_title' keys.
     """
     
@@ -85,17 +86,17 @@ def generate_social_posts(summary: str) -> Dict[str, str]:
         print("❌ Ollama generation test failed, returning fallback")
         return get_fallback_posts()
     
-    prompt = f"""You are a creative social media assistant. Based on this summary, create engaging social media content:
+    prompt = f"""You are a creative social media assistant. Based on this summary, create engaging social media content.
 
 Summary: {summary}
 
 Please respond EXACTLY in this format:
 
-Twitter: [Write a catchy tweet under 280 characters]
+Twitter: [Write a catchy tweet under 280 characters. Use at most one hashtag, and fill the rest with engaging text.]
 
-Instagram: [Write an engaging caption with 4-5 emojis and end with 3-5 hashtags]
+Instagram: [Write an engaging caption with 3-4 emojis and end with 2-3 hashtags.]
 
-Shorts Title: [Write a compelling title in 8 words or less]
+Shorts Title: [Write a compelling YouTube Shorts title ideally close to 40 characters, but never more than 50 characters.]
 
 Remember to follow the exact format above."""
 
@@ -103,7 +104,7 @@ Remember to follow the exact format above."""
         print(f"🔄 Attempt {attempt}/{MAX_RETRIES} to generate posts...")
 
         try:
-            # Use the generate API
+            # Using the generate API
             payload = {
                 "model": OLLAMA_MODEL,
                 "prompt": prompt,
@@ -121,7 +122,7 @@ Remember to follow the exact format above."""
             response = requests.post(
                 f"{OLLAMA_URL}/api/generate",
                 json=payload,
-                timeout=120,  # Increased timeout
+                timeout=120,  # Increased timeout for testing
             )
             
             print(f"📥 Response status: {response.status_code}")
@@ -143,7 +144,7 @@ Remember to follow the exact format above."""
             
             print(f"📋 Parsed response: {json.dumps(parsed, indent=2)}")
 
-            # Validate parsed content
+            # Validating parsed content
             valid_content = True
             for key in ["twitter", "instagram", "shorts_title"]:
                 if not parsed.get(key) or parsed[key].strip() == "":
@@ -186,7 +187,7 @@ def parse_ollama_response(text: str) -> Dict[str, str]:
         "twitter": "twitter",
         "instagram": "instagram", 
         "shorts title": "shorts_title",
-        "shorts_title": "shorts_title",  # Handle both formats
+        "shorts_title": "shorts_title",  # Handling both formats
     }
 
     # Split into lines and process
@@ -199,18 +200,18 @@ def parse_ollama_response(text: str) -> Dict[str, str]:
         if not line:
             continue
 
-        # Check if this line starts a new section
+        # Checking if the line starts a new section
         found_key = None
         for label, internal_key in key_map.items():
             if line.lower().startswith(label.lower() + ":"):
                 found_key = internal_key
-                # Save previous content if any
+                # Saving previous content if there is any
                 if current_key and current_content:
                     posts[current_key] = ' '.join(current_content).strip()
                 
-                # Start new section
+                # Starting new section
                 current_key = found_key
-                # Extract content after the colon
+                # Extracting content after the colon
                 content_after_colon = line.split(":", 1)[1].strip() if ":" in line else ""
                 current_content = [content_after_colon] if content_after_colon else []
                 break
@@ -219,7 +220,7 @@ def parse_ollama_response(text: str) -> Dict[str, str]:
             # This line belongs to the current section
             current_content.append(line)
 
-    # Don't forget the last section
+    # Including the last section
     if current_key and current_content:
         posts[current_key] = ' '.join(current_content).strip()
 
